@@ -1,29 +1,5 @@
-# License: Apache 2.0. See LICENSE file in root directory.
-# Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
-
-"""
-OpenCV and Numpy Point cloud Software Renderer
-
-This sample is mostly for demonstration and educational purposes.
-It really doesn't offer the quality or performance that can be
-achieved with hardware acceleration.
-
-Usage:
-------
-Mouse: 
-    Drag with left button to rotate around pivot (thick small axes), 
-    with right button to translate and the wheel to zoom.
-
-Keyboard: 
-    [p]     Pause
-    [r]     Reset View
-    [d]     Cycle through decimation values
-    [z]     Toggle point scaling
-    [c]     Toggle color source
-    [s]     Save PNG (./out.png)
-    [e]     Export points to ply (./out.ply)
-    [q\ESC] Quit
-"""
+# Adapted from `opencv_pointcloud_viewer.py` example for realsense camera.
+# https://github.com/IntelRealSense/librealsense/blob/923253f645e867c75e3c6c30a84127f41d82f3e9/wrappers/python/examples/opencv_pointcloud_viewer.py
 
 import math
 import time
@@ -32,6 +8,9 @@ import numpy as np
 import pyrealsense2 as rs
 
 output_number = 0
+
+WIDTH = 640
+HEIGHT = 480
 
 class AppState:
 
@@ -61,14 +40,13 @@ class AppState:
     def pivot(self):
         return self.translation + np.array((0, 0, self.distance), dtype=np.float32)
 
-
 state = AppState()
 
 # Configure depth and color streams
 pipeline = rs.pipeline()
 config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+config.enable_stream(rs.stream.depth, WIDTH, HEIGHT, rs.format.z16, 30)
+config.enable_stream(rs.stream.color, WIDTH, HEIGHT, rs.format.bgr8, 30)
 
 # Start streaming
 pipeline.start(config)
@@ -85,7 +63,7 @@ decimate = rs.decimation_filter()
 decimate.set_option(rs.option.filter_magnitude, 2 ** state.decimate)
 colorizer = rs.colorizer()
 
-
+# Mouse actions for cv2
 def mouse_cb(event, x, y, flags, param):
 
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -135,7 +113,6 @@ def mouse_cb(event, x, y, flags, param):
 cv2.namedWindow(state.WIN_NAME, cv2.WINDOW_AUTOSIZE)
 cv2.resizeWindow(state.WIN_NAME, w, h)
 cv2.setMouseCallback(state.WIN_NAME, mouse_cb)
-
 
 def project(v):
     """project 3d vector array to 2d"""
@@ -344,12 +321,16 @@ while True:
     if key == ord("c"):
         state.color ^= True
 
+    # Takes a screenshot of the GUI
     if key == ord("s"):
         cv2.imwrite('./out.png', out)
 
+    # Takes a snapshot of depthmap and outputs to `.ply`
     if key == ord("e"):
         output_number += 1
-        points.export_to_ply(f"./out{output_number}.ply", mapped_frame)
+        points.export_to_ply(f"./outputs/out_{output_number}.ply", mapped_frame)
+        cv2.imwrite(f"./outputs/image_rgb_{output_number}.png", color_image)
+        cv2.imwrite(f"./outputs/image_depth_{output_number}.png", depth_image)
 
     if key in (27, ord("q")) or cv2.getWindowProperty(state.WIN_NAME, cv2.WND_PROP_AUTOSIZE) < 0:
         break

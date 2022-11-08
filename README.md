@@ -12,3 +12,7 @@
 5. Install PyRealsense2
     * Mac `pip install pyrealsense2-macosx`
     * Windows `pip install pyrealsense2`
+
+## Notes
+* `capture.py` handles writing `.ply` and `.png` files
+* `processing.py` handles the processing of files into point clouds.
